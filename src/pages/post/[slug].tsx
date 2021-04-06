@@ -1,5 +1,6 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
@@ -34,9 +35,10 @@ interface Post {
 
 interface PostProps {
   post: Post;
+  preview: boolean;
 }
 
-export default function Post({ post }: PostProps): JSX.Element {
+export default function Post({ post, preview }: PostProps): JSX.Element {
   const { isFallback } = useRouter();
 
   const readingTime = useMemo(() => {
@@ -81,13 +83,15 @@ export default function Post({ post }: PostProps): JSX.Element {
               <h1>{post?.data.title}</h1>
 
               <section className={commonStyles.info}>
-                <span>
-                  <FiCalendar />
-                  {format(
-                    parseISO(post.first_publication_date),
-                    'dd MMM yyyy'
-                  ).toLowerCase()}
-                </span>
+                {!preview && (
+                  <span>
+                    <FiCalendar />
+                    {format(
+                      parseISO(post.first_publication_date),
+                      'dd MMM yyyy'
+                    ).toLowerCase()}
+                  </span>
+                )}
 
                 <span>
                   <FiUser />
@@ -113,6 +117,14 @@ export default function Post({ post }: PostProps): JSX.Element {
             </article>
 
             <Comments />
+
+            {preview && (
+              <Link href="/api/exit-preview">
+                <a className={commonStyles.previewButton}>
+                  Sair do movo Preview
+                </a>
+              </Link>
+            )}
           </div>
         </>
       )}
@@ -134,14 +146,21 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async context => {
-  const { slug } = context.params;
+export const getStaticProps: GetStaticProps = async ({
+  params,
+  preview = false,
+  previewData,
+}) => {
+  const { slug } = params;
   const prismic = getPrismicClient();
-  const postResponse = await prismic.getByUID('posts', String(slug), null);
+  const postResponse = await prismic.getByUID('posts', String(slug), {
+    ref: previewData?.ref ?? null,
+  });
 
   return {
     props: {
       post: postResponse,
+      preview,
     },
   };
 };
