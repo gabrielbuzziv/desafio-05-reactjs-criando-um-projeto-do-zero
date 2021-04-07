@@ -31,11 +31,15 @@ interface PostPagination {
 
 interface HomeProps {
   postsPagination: PostPagination;
+  preview: boolean;
 }
 
 const PAGE_SIZE = 2;
 
-export default function Home({ postsPagination }: HomeProps): JSX.Element {
+export default function Home({
+  postsPagination,
+  preview,
+}: HomeProps): JSX.Element {
   const [posts, setPosts] = useState(postsPagination.results);
   const [nextPage, setNextPage] = useState(postsPagination.next_page);
 
@@ -68,13 +72,15 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
               <p>{post.data.subtitle}</p>
 
               <footer className={commonStyles.info}>
-                <span>
-                  <FiCalendar />
-                  {format(
-                    parseISO(post.first_publication_date),
-                    'dd MMM yyyy'
-                  ).toLowerCase()}
-                </span>
+                {!preview && (
+                  <span>
+                    <FiCalendar />
+                    {format(
+                      parseISO(post.first_publication_date),
+                      'dd MMM yyyy'
+                    ).toLowerCase()}
+                  </span>
+                )}
 
                 <span>
                   <FiUser />
@@ -94,18 +100,28 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
             </button>
           )}
         </main>
+
+        {preview && (
+          <Link href="/api/exit-preview">
+            <a className={commonStyles.previewButton}>Sair do movo Preview</a>
+          </Link>
+        )}
       </div>
     </>
   );
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async ({
+  preview = false,
+  previewData,
+}) => {
   const prismic = getPrismicClient();
   const postsResponse = await prismic.query(
     Prismic.Predicates.at('document.type', 'posts'),
     {
       pageSize: PAGE_SIZE,
       page: 1,
+      ref: previewData?.ref ?? null,
     }
   );
 
@@ -115,6 +131,7 @@ export const getStaticProps: GetStaticProps = async () => {
         ...postsResponse,
         results: postsResponse.results,
       },
+      preview,
     },
   };
 };

@@ -43,3 +43,51 @@
     line-height: 1.6rem;
   }
 }
+
+.edited {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  display: block;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1rem;
+  margin-top: 1rem;
+}
+
+.pagination {
+  border-top: 1px solid var(--gray-500);
+  padding: 3rem 0 5rem;
+  margin-top: 3.975rem;
+
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3rem;
+
+  a {
+    text-align: left;
+
+    &:nth-child(2) {
+      text-align: right;
+    }
+
+  }
+
+  strong {
+    color: var(--gray-100);
+    font-weight: 400;
+    font-size: 1.1rem;
+    line-height: 1.25rem;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+
+    display: block;
+  }
+
+  small {
+    color: var(--pink);
+    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 1.2rem;
+    letter-spacing: -0.5px;
+  }
+}
