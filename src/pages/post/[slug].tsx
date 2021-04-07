@@ -18,6 +18,7 @@ import styles from './post.module.scss';
 
 interface Post {
   first_publication_date: string | null;
+  last_publication_date: string | null;
   data: {
     title: string;
     banner: {
@@ -36,9 +37,16 @@ interface Post {
 interface PostProps {
   post: Post;
   preview: boolean;
+  previousPost?: Post;
+  nextPost?: Post;
 }
 
-export default function Post({ post, preview }: PostProps): JSX.Element {
+export default function Post({
+  post,
+  preview,
+  previousPost,
+  nextPost,
+}: PostProps): JSX.Element {
   const { isFallback } = useRouter();
 
   const readingTime = useMemo(() => {
@@ -104,6 +112,16 @@ export default function Post({ post, preview }: PostProps): JSX.Element {
                 </span>
               </section>
 
+              {post.last_publication_date && (
+                <small className={styles.edited}>
+                  * editado em{' '}
+                  {format(
+                    parseISO(post.last_publication_date),
+                    "dd MMM yyyy, 'às' hh:mm"
+                  ).toLowerCase()}
+                </small>
+              )}
+
               {post?.data.content.map((content, contentIndex) => (
                 <section key={String(`post-content-${contentIndex}`)}>
                   <h3>{content.heading}</h3>
@@ -115,6 +133,26 @@ export default function Post({ post, preview }: PostProps): JSX.Element {
                 </section>
               ))}
             </article>
+
+            <footer className={styles.pagination}>
+              {previousPost && (
+                <Link href={`/post/${previousPost.uid}`}>
+                  <a>
+                    <strong>{previousPost.data.title}</strong>
+                    <small>Post anterior</small>
+                  </a>
+                </Link>
+              )}
+
+              {nextPost && (
+                <Link href={`/post/${nextPost.uid}`}>
+                  <a>
+                    <strong>{nextPost.data.title}</strong>
+                    <small>Próximo post</small>
+                  </a>
+                </Link>
+              )}
+            </footer>
 
             <Comments />
 
@@ -153,14 +191,36 @@ export const getStaticProps: GetStaticProps = async ({
 }) => {
   const { slug } = params;
   const prismic = getPrismicClient();
-  const postResponse = await prismic.getByUID('posts', String(slug), {
+  const post = await prismic.getByUID('posts', String(slug), {
     ref: previewData?.ref ?? null,
   });
 
+  const previousPost = await prismic.query(
+    Prismic.Predicates.at('document.type', 'posts'),
+    {
+      pageSize: 1,
+      after: String(post.id),
+      orderings: '[document.first_publication_date desc]',
+    }
+  );
+
+  const nextPost = await prismic.query(
+    Prismic.Predicates.at('document.type', 'posts'),
+    {
+      pageSize: 10,
+      after: String(post.id),
+      orderings: '[document.first_publication_date]',
+    }
+  );
+
   return {
     props: {
-      post: postResponse,
+      post,
       preview,
+      previousPost: previousPost.results.length
+        ? previousPost.results[0]
+        : null,
+      nextPost: nextPost.results.length ? nextPost.results[0] : null,
     },
   };
 };
